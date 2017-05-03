@@ -59,8 +59,8 @@ xmonad :: (LayoutClass l Window, Read (l Window)) => XConfig l -> IO ()
 xmonad conf = do
     installSignalHandlers -- important to ignore SIGCHLD to avoid zombies
 
-    let launch' args = do
-              catchIO buildLaunch
+    let launch' useConf args = do
+              when (useConf) (catchIO buildLaunch)
               conf' @ XConfig { layoutHook = Layout l }
                   <- handleExtraArgs conf args conf{ layoutHook = Layout (layoutHook conf) }
               withArgs [] $ launch (conf' { layoutHook = l })
@@ -74,7 +74,8 @@ xmonad conf = do
         ["--version"]         -> putStrLn $ unwords shortVersion
         ["--verbose-version"] -> putStrLn . unwords $ shortVersion ++ longVersion
         "--replace" : args'   -> sendReplace >> launch' args'
-        _                     -> launch' args
+        ["--no-conf"]         -> launch' False args
+        _                     -> launch' True  args
  where
     shortVersion = ["xmonad", showVersion version]
     longVersion  = [ "compiled by", compilerName, showVersion compilerVersion
